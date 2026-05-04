@@ -2,8 +2,32 @@
   const app = document.getElementById('app');
   const NAME_KEY = 'gansulhero_name';
   const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-  const TYPES = ['간술', '공적간술', '찾간'];
-  const COUNTS = [0, 1, 2, 3, 4, 5];
+
+  const DRINKS = [
+    { key: 'soju',      label: '소주',   emoji: '🍶' },
+    { key: 'beer',      label: '맥주',   emoji: '🍺' },
+    { key: 'distilled', label: '증류주', emoji: '🫗' },
+    { key: 'wine',      label: '와인',   emoji: '🍷' },
+    { key: 'whiskey',   label: '위스키', emoji: '🥃' },
+  ];
+
+  const HOLIDAYS = {
+    '2025-01-01': '신정', '2025-01-28': '설날연휴', '2025-01-29': '설날',
+    '2025-01-30': '설날연휴', '2025-03-01': '삼일절', '2025-05-05': '어린이날',
+    '2025-06-06': '현충일', '2025-08-15': '광복절', '2025-10-03': '개천절',
+    '2025-10-05': '추석연휴', '2025-10-06': '추석', '2025-10-07': '추석연휴',
+    '2025-10-09': '한글날', '2025-12-25': '성탄절',
+    '2026-01-01': '신정', '2026-02-16': '설날연휴', '2026-02-17': '설날',
+    '2026-02-18': '설날연휴', '2026-03-01': '삼일절', '2026-05-05': '어린이날',
+    '2026-05-24': '부처님오신날', '2026-06-06': '현충일', '2026-08-15': '광복절',
+    '2026-09-24': '추석연휴', '2026-09-25': '추석', '2026-09-26': '추석연휴',
+    '2026-10-03': '개천절', '2026-10-09': '한글날', '2026-12-25': '성탄절',
+    '2027-01-01': '신정', '2027-02-06': '설날연휴', '2027-02-07': '설날',
+    '2027-02-08': '설날연휴', '2027-03-01': '삼일절', '2027-05-05': '어린이날',
+    '2027-05-13': '부처님오신날', '2027-06-06': '현충일', '2027-08-15': '광복절',
+    '2027-10-03': '개천절', '2027-10-09': '한글날', '2027-10-14': '추석연휴',
+    '2027-10-15': '추석', '2027-10-16': '추석연휴', '2027-12-25': '성탄절',
+  };
 
   const cfg = window.GANSULHERO_CONFIG || {};
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) {
@@ -19,7 +43,7 @@
     month: new Date(),
     logs: [],
     selectedDate: null,
-    form: { soju: 0, beer: 0, wine: 0, whiskey: 0, session_type: '간술', memo: '' },
+    form: { soju: 0, beer: 0, distilled: 0, wine: 0, whiskey: 0, memo: '' },
     loading: false,
     error: ''
   };
@@ -32,6 +56,14 @@
   };
 
   const monthLabel = (date) => `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+
+  const dateLabel = (dateStr) => {
+    const d = new Date(`${dateStr}T00:00:00`);
+    const dayName = DAYS[d.getDay()];
+    const holiday = HOLIDAYS[dateStr];
+    const base = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${dayName})`;
+    return holiday ? `${base} · ${holiday} 🎌` : base;
+  };
 
   const gridForMonth = (date) => {
     const first = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -57,8 +89,10 @@
     return d;
   };
 
-  const weekRangeLabel = (start, end) => `${start.getMonth() + 1}/${start.getDate()}–${end.getMonth() + 1}/${end.getDate()}`;
-  const totalBottles = (log) => (Number(log.soju) || 0) + (Number(log.beer) || 0) + (Number(log.wine) || 0) + (Number(log.whiskey) || 0);
+  const weekRangeLabel = (start, end) =>
+    `${start.getMonth() + 1}/${start.getDate()}–${end.getMonth() + 1}/${end.getDate()}`;
+
+  const totalBottles = (log) => DRINKS.reduce((sum, d) => sum + (Number(log[d.key]) || 0), 0);
 
   const heatLevel = (count) => (count >= 6 ? 4 : count >= 4 ? 3 : count >= 2 ? 2 : count >= 1 ? 1 : 0);
   const heatStyle = (level) => [
@@ -86,6 +120,13 @@
     return map;
   }
 
+  function getTopMemo(logs) {
+    if (!logs || !logs.length) return null;
+    const withMemo = logs.filter((l) => l.memo);
+    if (!withMemo.length) return null;
+    return [...withMemo].sort((a, b) => totalBottles(b) - totalBottles(a))[0].memo;
+  }
+
   function getWeeklyHero() {
     const start = startOfWeek(new Date());
     const end = endOfWeek(new Date());
@@ -105,20 +146,24 @@
   }
 
   function emptyForm() {
-    return { soju: 0, beer: 0, wine: 0, whiskey: 0, session_type: '간술', memo: '' };
+    return { soju: 0, beer: 0, distilled: 0, wine: 0, whiskey: 0, memo: '' };
   }
 
   function syncFormWithSelected() {
     if (!state.selectedDate || !state.name) return;
-    const mine = state.logs.find((log) => log.drink_date === state.selectedDate && log.user_name === state.name);
-    state.form = mine ? {
-      soju: Number(mine.soju) || 0,
-      beer: Number(mine.beer) || 0,
-      wine: Number(mine.wine) || 0,
-      whiskey: Number(mine.whiskey) || 0,
-      session_type: mine.session_type || '간술',
-      memo: mine.memo || ''
-    } : emptyForm();
+    const mine = state.logs.find(
+      (log) => log.drink_date === state.selectedDate && log.user_name === state.name
+    );
+    state.form = mine
+      ? {
+          soju: Number(mine.soju) || 0,
+          beer: Number(mine.beer) || 0,
+          distilled: Number(mine.distilled) || 0,
+          wine: Number(mine.wine) || 0,
+          whiskey: Number(mine.whiskey) || 0,
+          memo: mine.memo || '',
+        }
+      : emptyForm();
     state.error = '';
   }
 
@@ -127,25 +172,23 @@
     const to = ymd(new Date(state.month.getFullYear(), state.month.getMonth() + 1, 0));
     const { data, error } = await supabase
       .from('drink_logs')
-      .select('id, drink_date, user_name, soju, beer, wine, whiskey, session_type, memo, created_at')
+      .select('id, drink_date, user_name, soju, beer, distilled, wine, whiskey, memo, created_at')
       .gte('drink_date', from)
       .lte('drink_date', to)
       .order('drink_date', { ascending: true })
       .order('created_at', { ascending: false });
 
-    if (error) {
-      state.error = '기록을 불러오지 못했음';
-      return;
-    }
+    if (error) { state.error = '기록을 불러오지 못했음'; return; }
     state.logs = data || [];
   }
 
   function getFriendlyError(error) {
-    const message = String(error?.message || '').toLowerCase();
-    if (message.includes('memo')) return 'DB에 memo 컬럼이 아직 없어 저장이 안 됨. migration.sql 먼저 실행해줘.';
-    if (message.includes('row-level security') || message.includes('permission')) return 'Supabase 정책 때문에 저장이 막혔음. schema.sql 또는 migration.sql을 다시 실행해줘.';
-    if (message.includes('duplicate')) return '같은 날짜의 기존 기록을 불러오지 못해 중복 저장이 막혔음. 새로고침 후 다시 시도해줘.';
-    return error?.message || '저장 중 오류가 발생했음';
+    const msg = String(error?.message || '').toLowerCase();
+    if (msg.includes('distilled')) return 'DB에 distilled 컬럼 없음 — migration.sql 실행 필요';
+    if (msg.includes('memo')) return 'DB에 memo 컬럼 없음 — migration.sql 실행 필요';
+    if (msg.includes('row-level security') || msg.includes('permission')) return 'Supabase 정책 오류 — schema.sql 재실행 필요';
+    if (msg.includes('duplicate')) return '중복 오류 — 새로고침 후 다시 시도';
+    return error?.message || '저장 중 오류 발생';
   }
 
   async function saveEntry() {
@@ -159,13 +202,15 @@
       user_name: state.name,
       soju: state.form.soju,
       beer: state.form.beer,
+      distilled: state.form.distilled,
       wine: state.form.wine,
       whiskey: state.form.whiskey,
-      session_type: state.form.session_type,
-      memo: state.form.memo.trim() || null
+      memo: state.form.memo.trim().slice(0, 20) || null,
     };
 
-    const existing = state.logs.find((log) => log.drink_date === state.selectedDate && log.user_name === state.name);
+    const existing = state.logs.find(
+      (log) => log.drink_date === state.selectedDate && log.user_name === state.name
+    );
 
     let error = null;
     if (existing?.id) {
@@ -175,11 +220,7 @@
     }
 
     state.loading = false;
-    if (error) {
-      state.error = getFriendlyError(error);
-      render();
-      return;
-    }
+    if (error) { state.error = getFriendlyError(error); render(); return; }
 
     await fetchMonth();
     state.selectedDate = null;
@@ -199,11 +240,7 @@
       .eq('user_name', state.name);
 
     state.loading = false;
-    if (error) {
-      state.error = '삭제 중 오류가 발생했음';
-      render();
-      return;
-    }
+    if (error) { state.error = '삭제 중 오류 발생'; render(); return; }
 
     await fetchMonth();
     state.selectedDate = null;
@@ -215,8 +252,15 @@
     const grid = gridForMonth(state.month);
     const weeklyHero = getWeeklyHero();
     const ranking = getMonthlyRanking();
-    const selectedLogs = state.selectedDate ? state.logs.filter((log) => log.drink_date === state.selectedDate) : [];
-    const mySelected = state.selectedDate && state.name ? state.logs.find((log) => log.drink_date === state.selectedDate && log.user_name === state.name) : null;
+    const selectedLogs = state.selectedDate
+      ? state.logs.filter((log) => log.drink_date === state.selectedDate)
+      : [];
+    const mySelected =
+      state.selectedDate && state.name
+        ? state.logs.find(
+            (log) => log.drink_date === state.selectedDate && log.user_name === state.name
+          )
+        : null;
 
     app.innerHTML = `
       ${!state.name ? `
@@ -260,7 +304,12 @@
           </div>
 
           <div class="legend">
-            ${['0', '1+', '2+', '4+', '6+'].map((label, idx) => `<div class="legend-item"><span class="legend-swatch" style="${heatStyle(idx)}"></span><span>${label}</span></div>`).join('')}
+            ${['0', '1+', '2+', '4+', '6+'].map((label, idx) => `
+              <div class="legend-item">
+                <span class="legend-swatch" style="${heatStyle(idx)}"></span>
+                <span>${label}</span>
+              </div>
+            `).join('')}
           </div>
 
           <div class="week-row">${DAYS.map((d) => `<div>${d}</div>`).join('')}</div>
@@ -269,17 +318,21 @@
               if (!date) return `<div class="empty" key="e-${index}"></div>`;
               const key = ymd(date);
               const logs = dayMap.get(key) || [];
-              const today = key === ymd(new Date()) ? 'today' : '';
+              const isToday = key === ymd(new Date());
+              const holiday = HOLIDAYS[key];
+              const topMemo = getTopMemo(logs);
               return `
-                <button class="day ${today}" data-date="${key}" style="${heatStyle(heatLevel(logs.length))}">
+                <button class="day${isToday ? ' today' : ''}${holiday ? ' holiday' : ''}" data-date="${key}" style="${heatStyle(heatLevel(logs.length))}">
                   <div class="day-head">
                     <span class="day-number">${date.getDate()}</span>
                     ${logs.length ? `<span class="day-count">${logs.length}</span>` : ''}
                   </div>
+                  ${holiday ? `<div class="day-holiday">${escapeHtml(holiday)}</div>` : ''}
                   <div class="day-names">
-                    ${logs.slice(0, 4).map((log) => `<span class="pill">${escapeHtml(log.user_name)}</span>`).join('')}
-                    ${logs.length > 4 ? `<span class="more">+${logs.length - 4}</span>` : ''}
+                    ${logs.slice(0, 3).map((log) => `<span class="pill">${escapeHtml(log.user_name)}</span>`).join('')}
+                    ${logs.length > 3 ? `<span class="more">+${logs.length - 3}</span>` : ''}
                   </div>
+                  ${topMemo ? `<div class="cell-memo">${escapeHtml(topMemo)}</div>` : ''}
                 </button>
               `;
             }).join('')}
@@ -297,12 +350,17 @@
             <div class="label">간술히어로</div>
             <div class="card-title">이번 달 간술히어로</div>
             <div class="rank-list">
-              ${ranking.length ? ranking.map(([name, count], idx) => `
-                <div class="rank-row">
-                  <div class="rank-left"><span class="rank-index">${idx + 1}</span><span>${escapeHtml(name)}</span></div>
-                  <strong>${count}회</strong>
-                </div>
-              `).join('') : `<div class="empty-text">아직 기록 없음</div>`}
+              ${ranking.length
+                ? ranking.map(([name, count], idx) => `
+                    <div class="rank-row">
+                      <div class="rank-left">
+                        <span class="rank-index">${idx + 1}</span>
+                        <span>${escapeHtml(name)}</span>
+                      </div>
+                      <strong>${count}회</strong>
+                    </div>
+                  `).join('')
+                : `<div class="empty-text">아직 기록 없음</div>`}
             </div>
           </div>
         </section>
@@ -311,60 +369,81 @@
       ${state.selectedDate ? `
         <div class="modal-backdrop" id="modal-backdrop">
           <div class="modal-card">
+
             <div class="modal-header">
               <div>
                 <div class="label">날짜 상세</div>
-                <div class="modal-title">${state.selectedDate}</div>
+                <div class="modal-title">${dateLabel(state.selectedDate)}</div>
               </div>
-              <button class="close-btn" id="close-modal">닫기</button>
+              <button class="close-btn" id="close-modal">✕</button>
             </div>
 
-            <div class="section">
-              <div class="section-title">음주량</div>
-              ${[['소주','soju'],['맥주','beer'],['와인','wine'],['위스키','whiskey']].map(([label, key]) => `
-                <div class="select-row">
-                  <div class="select-label">${label}</div>
-                  <div class="options">
-                    ${COUNTS.map((count) => `<button class="count ${state.form[key] === count ? 'active' : ''}" data-count-key="${key}" data-count-value="${count}">${count}</button>`).join('')}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-
-            <div class="section">
-              <div class="section-title">유형</div>
-              <div class="options">
-                ${TYPES.map((type) => `<button class="type-btn ${state.form.session_type === type ? 'active' : ''}" data-type="${type}">${type}</button>`).join('')}
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-title">이날의 기록 메모</div>
-              <textarea id="memo-input" class="memo-input" placeholder="짧게 메모 남기기">${escapeHtml(state.form.memo)}</textarea>
-            </div>
-
-            <div class="section">
-              <div class="section-title">이 날의 기록</div>
+            <div class="modal-section">
+              <div class="section-title">📋 이날의 기록</div>
               <div class="record-list">
-                ${selectedLogs.length ? selectedLogs.map((log) => `
-                  <div class="record-row">
-                    <div>
-                      <div class="record-name">${escapeHtml(log.user_name)}</div>
-                      <div class="record-meta">${escapeHtml(log.session_type)} · 총 ${totalBottles(log)}병</div>
-                      ${log.memo ? `<div class="record-memo">${escapeHtml(log.memo)}</div>` : ''}
-                    </div>
-                    <div class="record-breakdown">소주 ${log.soju} · 맥주 ${log.beer} · 와인 ${log.wine} · 위스키 ${log.whiskey}</div>
-                  </div>
-                `).join('') : `<div class="empty-text">아직 등록된 기록 없음</div>`}
+                ${selectedLogs.length
+                  ? selectedLogs.map((log) => {
+                      const activeDrinks = DRINKS.filter((d) => Number(log[d.key]) > 0);
+                      return `
+                        <div class="record-row">
+                          <div class="record-left">
+                            <div class="record-name">${escapeHtml(log.user_name)}</div>
+                            ${log.memo ? `<div class="record-memo">"${escapeHtml(log.memo)}"</div>` : ''}
+                          </div>
+                          <div class="record-drinks">
+                            ${activeDrinks.length
+                              ? activeDrinks.map((d) => `<span class="drink-badge">${d.emoji} ×${log[d.key]}</span>`).join('')
+                              : '<span class="record-meta">기록 없음</span>'}
+                          </div>
+                        </div>
+                      `;
+                    }).join('')
+                  : `<div class="empty-text">아직 등록된 기록 없음</div>`}
               </div>
             </div>
 
-            ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ''}
+            <div class="modal-divider"></div>
 
-            <div class="modal-actions">
-              ${mySelected ? `<button class="delete-btn" id="delete-entry">내 기록 삭제</button>` : '<span></span>'}
-              <button class="primary" id="save-entry">${state.loading ? '저장 중...' : mySelected ? '내 기록 수정' : '내 기록 저장'}</button>
+            <div class="modal-section">
+              <div class="section-title">✏️ 내 기록</div>
+
+              <div class="drink-grid">
+                ${DRINKS.map(({ key, label, emoji }) => `
+                  <button class="drink-icon-btn${state.form[key] > 0 ? ' active' : ''}" data-drink-key="${key}">
+                    <span class="drink-emoji">${emoji}</span>
+                    <span class="drink-label">${label}</span>
+                    <span class="drink-count">${state.form[key] > 0 ? `×${state.form[key]}` : '–'}</span>
+                  </button>
+                `).join('')}
+              </div>
+
+              <div class="memo-wrap">
+                <div class="memo-header">
+                  <span class="section-label">📝 메모</span>
+                  <span class="memo-len" id="memo-len">${(state.form.memo || '').length}/20</span>
+                </div>
+                <input
+                  id="memo-input"
+                  class="memo-input"
+                  type="text"
+                  placeholder="오늘 술자리 한 줄 메모"
+                  maxlength="20"
+                  value="${escapeHtml(state.form.memo)}"
+                />
+              </div>
+
+              ${state.error ? `<div class="error">${escapeHtml(state.error)}</div>` : ''}
+
+              <div class="modal-actions">
+                ${mySelected
+                  ? `<button class="delete-btn" id="delete-entry">내 기록 삭제</button>`
+                  : '<span></span>'}
+                <button class="primary" id="save-entry" ${state.loading ? 'disabled' : ''}>
+                  ${state.loading ? '저장 중...' : mySelected ? '내 기록 수정' : '내 기록 저장'}
+                </button>
+              </div>
             </div>
+
           </div>
         </div>
       ` : ''}
@@ -402,43 +481,46 @@
     const memoInput = document.getElementById('memo-input');
     if (memoInput) {
       memoInput.addEventListener('input', (e) => {
-        state.form.memo = e.target.value;
+        state.form.memo = e.target.value.slice(0, 20);
+        const lenEl = document.getElementById('memo-len');
+        if (lenEl) lenEl.textContent = `${state.form.memo.length}/20`;
       });
     }
 
-    document.querySelectorAll('[data-action="prev-month"]').forEach((el) => el.addEventListener('click', async () => {
-      state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1);
-      await fetchMonth();
-      render();
-    }));
-    document.querySelectorAll('[data-action="next-month"]').forEach((el) => el.addEventListener('click', async () => {
-      state.month = new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1);
-      await fetchMonth();
-      render();
-    }));
-    document.querySelectorAll('[data-action="today"]').forEach((el) => el.addEventListener('click', async () => {
-      state.month = new Date();
-      await fetchMonth();
-      render();
-    }));
+    document.querySelectorAll('[data-action="prev-month"]').forEach((el) =>
+      el.addEventListener('click', async () => {
+        state.month = new Date(state.month.getFullYear(), state.month.getMonth() - 1, 1);
+        await fetchMonth(); render();
+      })
+    );
+    document.querySelectorAll('[data-action="next-month"]').forEach((el) =>
+      el.addEventListener('click', async () => {
+        state.month = new Date(state.month.getFullYear(), state.month.getMonth() + 1, 1);
+        await fetchMonth(); render();
+      })
+    );
+    document.querySelectorAll('[data-action="today"]').forEach((el) =>
+      el.addEventListener('click', async () => {
+        state.month = new Date(); await fetchMonth(); render();
+      })
+    );
 
-    document.querySelectorAll('[data-date]').forEach((el) => el.addEventListener('click', (e) => {
-      state.selectedDate = e.currentTarget.dataset.date;
-      syncFormWithSelected();
-      render();
-    }));
+    document.querySelectorAll('[data-date]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        state.selectedDate = e.currentTarget.dataset.date;
+        syncFormWithSelected();
+        render();
+      })
+    );
 
-    document.querySelectorAll('[data-count-key]').forEach((el) => el.addEventListener('click', (e) => {
-      const key = e.currentTarget.dataset.countKey;
-      const value = Number(e.currentTarget.dataset.countValue);
-      state.form[key] = value;
-      render();
-    }));
-
-    document.querySelectorAll('[data-type]').forEach((el) => el.addEventListener('click', (e) => {
-      state.form.session_type = e.currentTarget.dataset.type;
-      render();
-    }));
+    document.querySelectorAll('[data-drink-key]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = e.currentTarget.dataset.drinkKey;
+        state.form[key] = (state.form[key] + 1) % 6;
+        render();
+      })
+    );
 
     const backdrop = document.getElementById('modal-backdrop');
     if (backdrop) {

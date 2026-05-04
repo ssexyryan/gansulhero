@@ -1,4 +1,16 @@
 alter table public.drink_logs add column if not exists memo text;
+alter table public.drink_logs add column if not exists distilled integer not null default 0;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'drink_logs_distilled_check'
+  ) then
+    alter table public.drink_logs
+      add constraint drink_logs_distilled_check check (distilled between 0 and 5);
+  end if;
+exception when others then null;
+end $$;
 create unique index if not exists drink_logs_drink_date_user_name_idx on public.drink_logs (drink_date, user_name);
 
 do $$
