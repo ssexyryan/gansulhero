@@ -216,20 +216,17 @@
     state.placeLoading = false; render();
   }
 
-  async function selectPlace(place) {
+  function selectPlace(place) {
     state.form.place = place.place_name;
     state.form.placeId = place.id;
     state.form.placeUrl = place.place_url;
-    state.form.placeImage = '';
+    state.form.placeImage = (place.x && place.y)
+      ? '/api/kakao-map-img?x=' + encodeURIComponent(place.x) + '&y=' + encodeURIComponent(place.y)
+      : '';
     state.form.placeCat = place.category_group_code || '';
     state.placeQuery = place.place_name;
     state.placeSuggestions = [];
     render();
-    try {
-      const res = await fetch('/api/og-image?url=' + encodeURIComponent(place.place_url));
-      const data = await res.json();
-      if (data.image) { state.form.placeImage = data.image; render(); }
-    } catch {}
   }
 
   /* render */
@@ -363,7 +360,7 @@
           const d = DRINKS.find(x => x.key === key);
           const val = form[key] || 0;
           const max = form.drinkMax[key] || 4;
-          const segs = Array.from({ length: max }, (_, i) => i + 1);
+          const segs = Array.from({ length: Math.round(max / 0.5) }, (_, i) => (i + 1) * 0.5);
           return '<div class="gauge-row">' +
             '<div class="gauge-info"><span class="gauge-emoji">' + d.emoji + '</span><span class="gauge-label">' + d.label + '</span></div>' +
             '<div class="gauge-track">' +
@@ -456,7 +453,7 @@
       el.addEventListener('click', e => {
         e.stopPropagation();
         const key = e.currentTarget.dataset.gaugeKey;
-        const val = Number(e.currentTarget.dataset.gaugeVal);
+        const val = parseFloat(e.currentTarget.dataset.gaugeVal);
         state.form[key] = state.form[key] === val ? 0 : val;
         render();
       });
@@ -466,7 +463,7 @@
       el.addEventListener('click', e => {
         e.stopPropagation();
         const key = e.currentTarget.dataset.gaugePlus;
-        state.form.drinkMax[key] = (state.form.drinkMax[key] || 4) + 1;
+        state.form.drinkMax[key] = (state.form.drinkMax[key] || 4) + 0.5;
         render();
       });
     });

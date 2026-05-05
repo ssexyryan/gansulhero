@@ -5,6 +5,13 @@ alter table public.drink_logs add column if not exists place_id text;
 alter table public.drink_logs add column if not exists place_url text;
 alter table public.drink_logs add column if not exists place_image text;
 
+-- 0.5 단위 주량 저장을 위해 numeric 타입으로 변경
+alter table public.drink_logs alter column soju type numeric(5,1) using soju::numeric;
+alter table public.drink_logs alter column beer type numeric(5,1) using beer::numeric;
+alter table public.drink_logs alter column distilled type numeric(5,1) using distilled::numeric;
+alter table public.drink_logs alter column wine type numeric(5,1) using wine::numeric;
+alter table public.drink_logs alter column whiskey type numeric(5,1) using whiskey::numeric;
+
 do $$
 begin
   if not exists (
