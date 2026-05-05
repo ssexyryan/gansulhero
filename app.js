@@ -220,8 +220,9 @@
     state.form.place = place.place_name;
     state.form.placeId = place.id;
     state.form.placeUrl = place.place_url;
-    state.form.placeImage = (place.x && place.y)
-      ? '/api/kakao-map-img?x=' + encodeURIComponent(place.x) + '&y=' + encodeURIComponent(place.y)
+    const jsKey = cfg.kakaoJsKey;
+    state.form.placeImage = (place.x && place.y && jsKey)
+      ? 'https://smap.kakao.com/staticmap/v2.png?appkey=' + jsKey + '&width=320&height=180&center=' + place.x + ',' + place.y + '&markers=TYPE_A,RED,' + place.x + ',' + place.y + '&level=3'
       : '';
     state.form.placeCat = place.category_group_code || '';
     state.placeQuery = place.place_name;
