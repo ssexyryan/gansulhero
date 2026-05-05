@@ -232,12 +232,14 @@
 
   function initPlaceMap() {
     if (!state.form.placeX || !state.form.placeY) return;
-    if (!window.kakao || !window.kakao.maps) return;
-    const el = document.getElementById('place-map');
-    if (!el) return;
-    const coords = new kakao.maps.LatLng(parseFloat(state.form.placeY), parseFloat(state.form.placeX));
-    const map = new kakao.maps.Map(el, { center: coords, level: 3 });
-    new kakao.maps.Marker({ position: coords, map });
+    setTimeout(() => {
+      if (!window.kakao || !window.kakao.maps) return;
+      const el = document.getElementById('place-map');
+      if (!el) return;
+      const coords = new kakao.maps.LatLng(parseFloat(state.form.placeY), parseFloat(state.form.placeX));
+      const map = new kakao.maps.Map(el, { center: coords, level: 3 });
+      new kakao.maps.Marker({ position: coords, map });
+    }, 100);
   }
 
   /* render */
