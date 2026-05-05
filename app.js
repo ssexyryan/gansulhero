@@ -61,6 +61,7 @@
       selectedDrinks: [],
       drinkMax: { soju: 4, beer: 4, distilled: 4, wine: 4, whiskey: 4 },
       place: '', placeId: '', placeUrl: '', placeImage: '', placeCat: '',
+      placeX: '', placeY: '',
       memo: '',
     };
   }
@@ -220,14 +221,23 @@
     state.form.place = place.place_name;
     state.form.placeId = place.id;
     state.form.placeUrl = place.place_url;
-    const jsKey = cfg.kakaoJsKey;
-    state.form.placeImage = (place.x && place.y && jsKey)
-      ? 'https://smap.kakao.com/staticmap/v2.png?appkey=' + jsKey + '&width=320&height=180&center=' + place.x + ',' + place.y + '&markers=TYPE_A,RED,' + place.x + ',' + place.y + '&level=3'
-      : '';
+    state.form.placeImage = '';
     state.form.placeCat = place.category_group_code || '';
+    state.form.placeX = place.x || '';
+    state.form.placeY = place.y || '';
     state.placeQuery = place.place_name;
     state.placeSuggestions = [];
     render();
+  }
+
+  function initPlaceMap() {
+    if (!state.form.placeX || !state.form.placeY) return;
+    if (!window.kakao || !window.kakao.maps) return;
+    const el = document.getElementById('place-map');
+    if (!el) return;
+    const coords = new kakao.maps.LatLng(parseFloat(state.form.placeY), parseFloat(state.form.placeX));
+    const map = new kakao.maps.Map(el, { center: coords, level: 3 });
+    new kakao.maps.Marker({ position: coords, map });
   }
 
   /* render */
@@ -248,6 +258,7 @@
       (state.selectedDate ? renderInputModal(mySelected) : '');
 
     bindEvents();
+    initPlaceMap();
   }
 
   function renderNameOverlay() {
@@ -349,10 +360,11 @@
         ).join('') + '</div>' : '') +
       '</div>' +
       (form.place ? '<div class="place-selected">' +
-        (form.placeImage ? '<img class="place-thumb" src="' + esc(form.placeImage) + '" onerror="this.style.display=\'none\'" />' : '<span class="place-thumb-icon">' + (CATEGORY_EMOJI[form.placeCat] || '🍽') + '</span>') +
+        '<span class="place-thumb-icon">' + (CATEGORY_EMOJI[form.placeCat] || '🍽') + '</span>' +
         '<div class="place-selected-info"><div class="place-selected-name">' + esc(form.place) + '</div>' +
-        (form.placeUrl ? '<a class="place-link" href="' + esc(form.placeUrl) + '" target="_blank" rel="noopener">지도 보기 →</a>' : '') +
-        '</div><button class="place-clear-btn" id="place-clear">✕</button></div>' : '') +
+        (form.placeUrl ? '<a class="place-link" href="' + esc(form.placeUrl) + '" target="_blank" rel="noopener">카카오맵 →</a>' : '') +
+        '</div><button class="place-clear-btn" id="place-clear">✕</button></div>' +
+        (form.placeX && form.placeY ? '<div id="place-map" class="place-map-wrap"></div>' : '') : '') +
       '</div>';
 
     const drinkSection = '<div class="modal-section">' +
@@ -508,6 +520,7 @@
       e.stopPropagation();
       state.form.place = ''; state.form.placeId = ''; state.form.placeUrl = '';
       state.form.placeImage = ''; state.form.placeCat = '';
+      state.form.placeX = ''; state.form.placeY = '';
       state.placeQuery = ''; state.placeSuggestions = [];
       render();
     });
