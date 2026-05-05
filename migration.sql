@@ -1,5 +1,9 @@
 alter table public.drink_logs add column if not exists memo text;
 alter table public.drink_logs add column if not exists distilled integer not null default 0;
+alter table public.drink_logs add column if not exists place_name text;
+alter table public.drink_logs add column if not exists place_id text;
+alter table public.drink_logs add column if not exists place_url text;
+alter table public.drink_logs add column if not exists place_image text;
 
 do $$
 begin
