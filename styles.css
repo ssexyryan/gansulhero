@@ -240,30 +240,17 @@ button { cursor: pointer; }
 .gauge-info { display: flex; align-items: center; gap: 5px; min-width: 60px; flex-shrink: 0; }
 .gauge-emoji { font-size: 17px; }
 .gauge-label { font-size: 11px; font-weight: 700; color: var(--muted); }
-.gauge-slider {
-  flex: 1; min-width: 0; height: 8px;
-  -webkit-appearance: none; appearance: none;
-  border-radius: 4px; outline: none; cursor: pointer;
-  border: none; padding: 0;
+.gauge-track { display: flex; gap: 3px; flex: 1; min-width: 0; }
+.gauge-seg {
+  flex: 1; height: 28px; border-radius: 5px; border: 1.5px solid rgba(217,119,6,0.15);
+  background: rgba(255,255,255,0.7); transition: all .1s ease; cursor: pointer; min-width: 0;
 }
-.gauge-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 26px; height: 26px; margin-top: -9px;
-  border-radius: 50%;
+.gauge-seg.filled {
   background: linear-gradient(135deg, #fbbf24, #f97316);
-  box-shadow: 0 2px 8px rgba(249,115,22,0.40);
-  border: 2.5px solid white;
-  cursor: pointer;
+  border-color: rgba(234,88,12,0.3);
+  box-shadow: 0 2px 6px rgba(249,115,22,0.22);
 }
-.gauge-slider::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; }
-.gauge-slider::-moz-range-thumb {
-  width: 26px; height: 26px;
-  border: 2.5px solid white; border-radius: 50%;
-  background: linear-gradient(135deg, #fbbf24, #f97316);
-  box-shadow: 0 2px 8px rgba(249,115,22,0.40);
-  cursor: pointer;
-}
-.gauge-slider::-moz-range-track { height: 8px; border-radius: 4px; background: rgba(217,119,6,0.12); }
+.gauge-seg:hover { border-color: rgba(245,158,11,0.5); }
 .gauge-val { font-size: 14px; font-weight: 800; min-width: 30px; text-align: center; color: #9a4f11; flex-shrink: 0; }
 .gauge-plus {
   width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--line-strong);
@@ -363,7 +350,8 @@ button { cursor: pointer; }
   }
   .modal-title { font-size: 17px; }
   .drink-toggle { padding: 7px 11px; font-size: 12px; }
-  .gauge-slider::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: -7px; }
+  .gauge-seg { height: 24px; }
+  .gauge-track { gap: 2px; }
   .gauge-info { min-width: 52px; }
   .place-dropdown { position: fixed; left: 8px; right: 8px; top: auto; }
   .modal-actions .primary { flex: 1; text-align: center; }

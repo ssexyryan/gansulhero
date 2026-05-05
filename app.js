@@ -365,11 +365,12 @@
           const d = DRINKS.find(x => x.key === key);
           const val = form[key] || 0;
           const max = form.drinkMax[key] || 4;
-          const pct = max > 0 ? Math.round((val / max) * 100) : 0;
-          const trackBg = 'linear-gradient(to right,#fbbf24 0%,#f97316 ' + pct + '%,rgba(217,119,6,0.12) ' + pct + '%,rgba(217,119,6,0.12) 100%)';
+          const segs = Array.from({ length: Math.round(max / 0.5) }, (_, i) => (i + 1) * 0.5);
           return '<div class="gauge-row">' +
             '<div class="gauge-info"><span class="gauge-emoji">' + d.emoji + '</span><span class="gauge-label">' + d.label + '</span></div>' +
-            '<input type="range" class="gauge-slider" min="0" max="' + max + '" step="0.5" value="' + val + '" data-gauge-key="' + key + '" style="background:' + trackBg + '">' +
+            '<div class="gauge-track">' +
+            segs.map(n => '<button class="gauge-seg' + (n <= val ? ' filled' : '') + '" data-gauge-key="' + key + '" data-gauge-val="' + n + '"></button>').join('') +
+            '</div>' +
             '<span class="gauge-val">' + val + '</span>' +
             '<button class="gauge-plus" data-gauge-plus="' + key + '">+</button>' +
             '</div>';
@@ -466,17 +467,14 @@
       });
     });
 
-    document.querySelectorAll('.gauge-slider').forEach(el => {
-      el.addEventListener('input', e => {
+    document.querySelectorAll('[data-gauge-key][data-gauge-val]').forEach(el => {
+      el.addEventListener('click', e => {
         e.stopPropagation();
         const key = e.currentTarget.dataset.gaugeKey;
-        const val = parseFloat(e.currentTarget.value);
-        const max = state.form.drinkMax[key] || 4;
-        state.form[key] = val;
-        const row = e.currentTarget.closest('.gauge-row');
-        if (row) { const vEl = row.querySelector('.gauge-val'); if (vEl) vEl.textContent = val; }
-        const pct = max > 0 ? Math.round((val / max) * 100) : 0;
-        e.currentTarget.style.background = 'linear-gradient(to right,#fbbf24 0%,#f97316 ' + pct + '%,rgba(217,119,6,0.12) ' + pct + '%,rgba(217,119,6,0.12) 100%)';
+        const val = parseFloat(e.currentTarget.dataset.gaugeVal);
+        state.form[key] = state.form[key] === val ? val - 0.5 : val;
+        if (state.form[key] < 0) state.form[key] = 0;
+        render();
       });
     });
 
