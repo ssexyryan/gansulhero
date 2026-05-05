@@ -323,6 +323,7 @@
       '<div class="modal-header"><div><div class="label">이날의 기록</div><div class="modal-title">' + dateLabel(state.viewDate) + '</div></div>' +
       '<button class="close-btn" id="close-view">✕</button></div>' +
       '<div class="view-list">' + cards + '</div>' +
+      (state.name ? '<div class="modal-actions"><span></span><button class="primary" id="edit-from-view">✏️ 내 기록 수정</button></div>' : '') +
       '</div></div>';
   }
 
@@ -361,12 +362,11 @@
           const d = DRINKS.find(x => x.key === key);
           const val = form[key] || 0;
           const max = form.drinkMax[key] || 4;
-          const segs = Array.from({ length: Math.round(max / 0.5) }, (_, i) => (i + 1) * 0.5);
+          const pct = max > 0 ? Math.round((val / max) * 100) : 0;
+          const trackBg = 'linear-gradient(to right,#fbbf24 0%,#f97316 ' + pct + '%,rgba(217,119,6,0.12) ' + pct + '%,rgba(217,119,6,0.12) 100%)';
           return '<div class="gauge-row">' +
             '<div class="gauge-info"><span class="gauge-emoji">' + d.emoji + '</span><span class="gauge-label">' + d.label + '</span></div>' +
-            '<div class="gauge-track">' +
-            segs.map(n => '<button class="gauge-seg' + (n <= val ? ' filled' : '') + '" data-gauge-key="' + key + '" data-gauge-val="' + n + '"></button>').join('') +
-            '</div>' +
+            '<input type="range" class="gauge-slider" min="0" max="' + max + '" step="0.5" value="' + val + '" data-gauge-key="' + key + '" style="background:' + trackBg + '">' +
             '<span class="gauge-val">' + val + '</span>' +
             '<button class="gauge-plus" data-gauge-plus="' + key + '">+</button>' +
             '</div>';
@@ -418,9 +418,16 @@
 
     document.querySelectorAll('[data-date]').forEach(el => {
       el.addEventListener('click', e => {
-        state.selectedDate = e.currentTarget.dataset.date;
-        state.viewDate = null;
-        syncFormWithSelected();
+        const dateKey = e.currentTarget.dataset.date;
+        const hasLogs = state.logs.some(l => l.drink_date === dateKey);
+        if (hasLogs) {
+          state.viewDate = dateKey;
+          state.selectedDate = null;
+        } else {
+          state.selectedDate = dateKey;
+          state.viewDate = null;
+          syncFormWithSelected();
+        }
         render();
       });
     });
@@ -435,6 +442,12 @@
     });
 
     document.getElementById('close-view')?.addEventListener('click', () => { state.viewDate = null; render(); });
+    document.getElementById('edit-from-view')?.addEventListener('click', () => {
+      state.selectedDate = state.viewDate;
+      state.viewDate = null;
+      syncFormWithSelected();
+      render();
+    });
     document.getElementById('close-input')?.addEventListener('click', () => { state.selectedDate = null; render(); });
     document.getElementById('view-backdrop')?.addEventListener('click', e => { if (e.target.id === 'view-backdrop') { state.viewDate = null; render(); } });
     document.getElementById('input-backdrop')?.addEventListener('click', e => { if (e.target.id === 'input-backdrop' && !state.loading) { state.selectedDate = null; render(); } });
@@ -450,13 +463,17 @@
       });
     });
 
-    document.querySelectorAll('[data-gauge-key][data-gauge-val]').forEach(el => {
-      el.addEventListener('click', e => {
+    document.querySelectorAll('.gauge-slider').forEach(el => {
+      el.addEventListener('input', e => {
         e.stopPropagation();
         const key = e.currentTarget.dataset.gaugeKey;
-        const val = parseFloat(e.currentTarget.dataset.gaugeVal);
-        state.form[key] = state.form[key] === val ? 0 : val;
-        render();
+        const val = parseFloat(e.currentTarget.value);
+        const max = state.form.drinkMax[key] || 4;
+        state.form[key] = val;
+        const row = e.currentTarget.closest('.gauge-row');
+        if (row) { const vEl = row.querySelector('.gauge-val'); if (vEl) vEl.textContent = val; }
+        const pct = max > 0 ? Math.round((val / max) * 100) : 0;
+        e.currentTarget.style.background = 'linear-gradient(to right,#fbbf24 0%,#f97316 ' + pct + '%,rgba(217,119,6,0.12) ' + pct + '%,rgba(217,119,6,0.12) 100%)';
       });
     });
 
