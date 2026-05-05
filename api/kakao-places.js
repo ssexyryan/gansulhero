@@ -12,6 +12,7 @@ export default async function handler(req, res) {
       { headers: { Authorization: `KakaoAK ${apiKey}` } }
     );
     const data = await response.json();
+    if (!response.ok) return res.json({ documents: [], kakao_error: data, status: response.status });
     res.json({ documents: data.documents || [] });
   } catch (err) {
     res.json({ documents: [], error: err.message });
