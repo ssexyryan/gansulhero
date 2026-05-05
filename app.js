@@ -285,10 +285,10 @@
         const topMemo = getTopMemo(logs);
         return '<button class="day' + (isToday ? ' today' : '') + (holiday ? ' holiday' : '') + '" data-date="' + key + '" style="' + heatStyle(heatLevel(logs.length)) + '">' +
           '<div class="day-head"><span class="day-number">' + date.getDate() + '</span>' +
-          (logs.length ? '<button class="day-count" data-view-date="' + key + '">' + logs.length + '</button>' : '') + '</div>' +
-          (holiday ? '<div class="day-holiday">' + esc(holiday) + '</div>' : '') +
-          '<div class="day-names">' + logs.slice(0,3).map(l => '<span class="pill">' + esc(l.user_name) + '</span>').join('') + (logs.length > 3 ? '<span class="more">+' + (logs.length-3) + '</span>' : '') + '</div>' +
-          (topMemo ? '<div class="cell-memo">' + esc(topMemo) + '</div>' : '') +
+          (logs.length ? '<span class="day-count" data-view-date="' + key + '">' + logs.length + '</span>' : '') + '</div>' +
+          (holiday ? '<div class="day-holiday hide-sm">' + esc(holiday) + '</div>' : '') +
+          '<div class="day-names hide-sm">' + logs.slice(0,3).map(l => '<span class="pill">' + esc(l.user_name) + '</span>').join('') + (logs.length > 3 ? '<span class="more">+' + (logs.length-3) + '</span>' : '') + '</div>' +
+          (topMemo ? '<div class="cell-memo hide-sm">' + esc(topMemo) + '</div>' : '') +
           '</button>';
       }).join('') + '</div></section>';
   }
