@@ -313,7 +313,10 @@
       return '<div class="view-card">' +
         (log.place_image ? '<img class="view-place-img" src="' + esc(log.place_image) + '" onerror="this.style.display=\'none\'" />' : '') +
         '<div class="view-card-header"><span class="view-name">' + esc(log.user_name) + '</span><span class="view-total">총 ' + totalBottles(log) + '병</span></div>' +
-        (log.place_name ? '<div class="view-place">' + catEmoji + ' ' + esc(log.place_name) + '</div>' : '') +
+        (log.place_name ? '<div class="view-place">' +
+          '<span class="view-place-name">' + catEmoji + ' ' + esc(log.place_name) + '</span>' +
+          (log.place_url ? '<a class="view-place-link" href="' + esc(log.place_url) + '" target="_blank" rel="noopener">지도 보기 →</a>' : '') +
+          '</div>' : '') +
         (drinks.length ? '<div class="view-drinks">' + drinks.map(d => '<span class="drink-badge">' + d.emoji + ' ×' + log[d.key] + '</span>').join('') + '</div>' : '') +
         (log.memo ? '<div class="view-memo">"' + esc(log.memo) + '"</div>' : '') +
         '</div>';
